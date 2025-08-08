@@ -22,10 +22,10 @@ If no shortcut appears, please look for the "RWMP2_Decryptor.exe" file in your i
 
 Double-click the desktop shortcut to launch, which will open a terminal:
 ```bash
-Copyright belongs to QinHai Cream, not for commercial use!
-Current version is Alpha2.x.x
-Visit official website for tutorial: https://coralhymn.com
-Please enter the ZIP file path to repair:
+琴海奶油版权所属，遵循MIT开源协议
+目前版本为 Alpha2.x.x
+查看教程前往官网：https://coralhymn.com
+请输入要修复的ZIP文件路径:
   ```
 If you don't see this information, the installation likely failed and you should reinstall
 
