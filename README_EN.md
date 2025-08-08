@@ -45,7 +45,7 @@ Now you have two usage methods
 ## 3. File Location
 
 Due to defects in Alpha2.0.* versions, the output file may be in either the mod file directory or the software directory (right-click desktop icon and select "Open file location") \
-You'll see a ZIP file with "Final Repair" suffix - this contains the decrypted files
+You'll see a ZIP file with "最终修复" suffix - this contains the decrypted files
 
 #### Regarding [ Android | iOS | macOS | Linux ]
   - Versions for more platforms are under development. If you develop versions for other platforms, please add them to branches
