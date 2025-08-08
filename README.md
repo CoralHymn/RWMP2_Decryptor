@@ -2,7 +2,7 @@
 
 <div align="center">
   
-### [🇺🇸 English](README_EN.MD) | [🇨🇳 简体中文](README.MD)
+### [🇺🇸 English](README_EN.md) | [🇨🇳 简体中文](README.md)
 
 </div>
 
