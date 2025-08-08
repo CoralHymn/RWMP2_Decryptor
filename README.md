@@ -9,6 +9,7 @@
 ## 介绍
   - RWMP2_Decryptor是“Rusted Warfare”游戏的MOD加密工具“RWMP2”的解锁工具
   - 此版本使用python制作，无giu功能
+  - 本软件使用了“Qwen3-235B-A22B”与“Qwen3-Coder”辅助编写
 
 ## 1.安装（windows）
 
