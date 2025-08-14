@@ -28,15 +28,15 @@
   https://rw.coralhymn.com/
   Known issue: Download may fail on "via" browser - please use Edge or Chrome
   
-- #installation-windows
-- #installation-linux
-- #server-deployment
+- [installation-windows](#Installation-(Windows))
+- [installation-linux](#Installation-(Linux))
+- [server-deployment](#Server-Deployment)
   
 # Installation (Windows)
 
-Get the latest Windows versions from https://github.com/CoralHymn/RWMP2_Decryptor/releases:
-- https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Windows_GUI.exe
-- https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Windows_WebUI.exe **(Recommended)** \
+Get the latest Windows versions from [Releases](https://github.com/CoralHymn/RWMP2_Decryptor/releases):
+- [RWMP2_Decryptor_Windows_GUI.exe](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Windows_GUI.exe)
+- [RWMP2_Decryptor_Windows_WebUI.exe](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Windows_WebUI.exe)  **(Recommended)** \
   Note❗ Versions before **2.1.0** only support Windows with outdated CLI interface - not recommended \
 These are portable executables - just double-click to run
 
@@ -48,23 +48,23 @@ First change your .rwmod file extension to .zip before use
   - Double-click the exe (may take a moment to load)
   - Click "Select ZIP File" to choose your mod file
   - Click "Process" and monitor progress. When complete, click "Download Result" to save
-  
+  ![wingui](http://hk.coralhymn.com/png/wingui.png)
 
   **WebUI**
   - Double-click the exe - a terminal will appear briefly before opening in your default browser
   - Drag & drop or click to upload your ZIP file (processed locally)
   - Click "Start", then wait for the download link to appear
   - Click the link to download (may take a moment)
-  - (Temporary files are auto-cleaned)
+  ![wingui](http://hk.coralhymn.com/png/winweb.png)
   
 
 # Installation (Linux)
 
 Works with most distros (contact me if issues occur) \
-Get Linux versions from https://github.com/CoralHymn/RWMP2_Decryptor/releases \
+Get Linux versions from [Releases](https://github.com/CoralHymn/RWMP2_Decryptor/releases)\
 These are (application/x-executable) binaries:
-- https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_GUI.bin
-- https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_Web.bin (Recommended)\
+- [RWMP2_Decryptor_Linux_GUI.bin](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_GUI.bin)
+- [RWMP2_Decryptor_Linux_Web.bin](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_Web.bin)(Recommended)\
 After download, grant execute permissions:
 ```bash
 chmod +x RWMP2_Decryptor_Linux*.bin  # Add executable permission
@@ -114,8 +114,8 @@ Other distros: Find equivalent xcb packages
 
 # Server Deployment
 
-Get Python source from https://github.com/CoralHymn/RWMP2_Decryptor/releases:
-- https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Server.py
+Get Python source from [Releases](https://github.com/CoralHymn/RWMP2_Decryptor/releases):
+- [RWMP2_Decryptor_Server.py](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Server.py)
 
 ## Prerequisites
 
@@ -124,7 +124,7 @@ Server requirements:
 - Python 3.6+
 - pip installed
 - Open port (default 8085) \
-If using control panel, skip to ##二、面板部署步骤
+If using control panel, skip to [Panel](#Panel-Deployment-(Baota-Demo))
 
 ## Command Line Deployment
 #### Step 1: Upload Code
