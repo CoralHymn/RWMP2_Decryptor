@@ -27,14 +27,19 @@
 ## 此软件有在线使用功能，适合全平台使用（您可以部署到您的服务器上）
   [前往使用](https://rw.coralhymn.com/)
   已知的错误--在“via”浏览器上会下载失败，请使用edge或者谷歌浏览器访问
-
+  
+- [windows](#安装（windows）)
+- [Linux](#安装（Linux）)
+- [服务器](#服务器部署)
+  
 # 安装（windows）
 
 您可以在[Releases](https://github.com/CoralHymn/RWMP2_Decryptor/releases)上获取Windows的两个最新版本 
 - [RWMP2_Decryptor_Windows_GUI.exe](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Windows_GUI.exe)
 - [RWMP2_Decryptor_Windows_WebUI.exe](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Windows_WebUI.exe) **（推荐）** \
   注意❗在**2.1.0**前面版本仅仅支持Windows，并且他过时了，是命令行界面，我并不推荐 \
-这两个文件无需安装，双击打开就可以用 \
+这两个文件无需安装，双击打开就可以用
+
   ## win使用教程
   
 在此之前需要先把您的rwmod文件后缀改成zip后缀再进行使用
@@ -120,10 +125,10 @@ sudo apt-get install libxcb-xinerama0 libxcb-xinerama0-dev
 - Python 3.6+
 - 安装 pip
 - 允许开放端口（该源码端口为8085）\
-如果您的服务器配置了面板服务，就可以不用敲命令了
+如果您的服务器配置了面板服务，就可以不用敲命令了[跳过命令行](##二、面板部署步骤)
 
-## 二、命令行部署步骤\
-#### 步骤 1：上传代码到服务器\
+## 二、命令行部署步骤
+#### 步骤 1：上传代码到服务器
 你可以通过以下方式将代码上传到服务器：
 - `scp` 命令：
   ```bash
@@ -134,7 +139,7 @@ sudo apt-get install libxcb-xinerama0 libxcb-xinerama0-dev
   git clone https://github.com/CoralHymn/RWMP2_Decryptor.git
   ```
 
-#### 步骤 2：安装依赖（PyWebIO）\
+#### 步骤 2：安装依赖（PyWebIO）
 登录服务器，进入项目目录，创建虚拟环境（推荐）并安装依赖：
 ```bash
 # 创建虚拟环境
@@ -155,7 +160,7 @@ python RWMP2_Decryptor_Server.py
 
 #### 步骤 4：后台运行（使用 `nohup` 或 `screen`）
 
-避免关闭终端后程序停止，使用后台运行：\
+避免关闭终端后程序停止，使用后台运行：
 ##### 方法 1：使用 `nohup`
 ```bash
 nohup python RWMP2_Decryptor_Server.py > app.log 2>&1 &
@@ -175,7 +180,7 @@ python RWMP2_Decryptor_Server.py
 screen -r pywebio
 ```
 
-#### 步骤 5：配置防火墙和安全组\
+#### 步骤 5：配置防火墙和安全组
 确保服务器防火墙开放了你使用的端口（如 8085）：
 
 - **Ubuntu（ufw）**：
@@ -184,7 +189,7 @@ screen -r pywebio
   ```
 - **CentOS（firewalld）**：
   ```bash
-  sudo firewall-cmd --permanent --add-port=8080/tcp
+  sudo firewall-cmd --permanent --add-port=8085/tcp
   sudo firewall-cmd --reload
   ```
 - **云服务器（如阿里云、腾讯云）**：在控制台安全组中添加入站规则，开放端口 8080。
@@ -218,7 +223,8 @@ screen -r pywebio
    sudo systemctl restart nginx
    ```
 
-## 二、面板部署步骤（宝塔面板演示）\
+## 二、面板部署步骤
+（宝塔面板演示）
 ### 第一步：安装 Python 项目管理器
 
 宝塔从 **v7.7+** 开始内置了「Python 项目」插件，但是默认没有下载。
