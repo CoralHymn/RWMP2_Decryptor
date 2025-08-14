@@ -2,7 +2,7 @@
 
 <div align="center">
   
-### README_EN.md | README.md
+### [🇺🇸 English](README_EN.md) | [🇨🇳 简体中文](README.md)
 
 </div>
 
