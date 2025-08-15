@@ -342,3 +342,7 @@ http://py.yourdomain.com
   - 禁止用于任何未经授权的解密的行为。
   - 滥用本工具可能导致严重法律后果，开发者不对任何非法使用行为承担责任。
   - 继续使用即表示您已阅读、理解并同意上述条款。 
+
+使用的python库：
+[PyWebIO](https://github.com/pywebio/PyWebIO)
+[PyQt](https://www.riverbankcomputing.com/software/pyqt/)
