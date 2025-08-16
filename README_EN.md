@@ -340,3 +340,8 @@ No port needed!
   - Prohibited for unauthorized decryption.
   - Misuse may lead to legal consequences. Developer assumes no liability for illegal usage.
   - Continued use constitutes acceptance of these terms.
+
+
+使用的python库：
+[PyWebIO](https://github.com/pywebio/PyWebIO)
+[PyQt](https://www.riverbankcomputing.com/software/pyqt/)
