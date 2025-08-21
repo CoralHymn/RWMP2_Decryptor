@@ -9,6 +9,8 @@ from pywebio.session import hold
 import threading  # 修复bug 2
 import time
 
+
+# ==这个代码可以从RWMP2_Decryptor.py直接复制过来就行== 
 import os
 import struct
 import zlib
@@ -24,7 +26,13 @@ from pywebio.output import put_text
 
 def reverse_replace_in_zip(zip_file_path):
     """执行解密替换的预处理功能，返回处理后的数据"""
-    # 替换
+    
+    # 替换反斜杠（用于执行字节序列的替换操作）
+    # 如果你发现有其他文件变成了文件夹，可以自行在下方加上（别忘了后面也有代码）
+    # 用16进制编码加上，如果不懂可以复制下面一段问ai
+    # 例如
+    #    2E 74 78 74 2F（ASCII: ".txt/"）→ 替换为 2E 74 78 74 31（ASCII: ".txt1"）
+    
     replacements = {
         bytes.fromhex('2E 74 78 74 2F'): bytes.fromhex('2E 74 78 74 31'),
         bytes.fromhex('2E 69 6E 69 2F'): bytes.fromhex('2E 69 6E 69 31'),
@@ -286,7 +294,7 @@ class AdvancedZipRepair:
     
     def create_repaired_zip(self):
         """将修复的文件打包成ZIP文件"""
-        repaired_zip_path = Path(self.original_zip_path).stem + "_最终修复.zip"  # 使用原始文件名
+        repaired_zip_path = Path(self.original_zip_path).stem + "_最终修复.zip"  # 使用原始文件名+最终修复，这个可以换的
         print(f"\n正在创建修复后的ZIP文件: {repaired_zip_path}")
         
         try:
@@ -627,7 +635,7 @@ def web_main():
         # label: 显示在页面上的文字
         # filename: 用户下载时保存的文件名
         put_file(
-            name=final_zip_filename,          # 第一个参数是下载的文件名
+            name=final_zip_filename,          # 第一个参数是下载的文件名，你可以加上自己的署名
             content=file_content,             # 第二个参数是文件内容
             label='📥 点击下载修复后的文件'    # 第三个参数是显示的文字
 )
@@ -635,6 +643,7 @@ def web_main():
         # ========== 修复点：使用Timer延迟清理原始上传的zip文件 ==========
         def cleanup_all_temp_files():
             """在30秒后清理本次操作产生的所有临时文件"""
+            #为保证服务器无垃圾残留，如果你是个人电脑可以删掉这一部分
             try:
                 # 等待30秒
                 time.sleep(30)
@@ -670,4 +679,6 @@ def web_main():
 
 if __name__ == '__main__':
     print("正在启动Web服务器... 访问 http://localhost:8085")
+    #在个人电脑上会随机放一个端口，你如果不想要自动启动把下面的“web_main,”删掉
+    #8085端口是为服务器服务的，如果你的服务器端口想换成其他的直接换下方的port数值
     start_server(web_main, port=8085, debug=True, host='0.0.0.0')
