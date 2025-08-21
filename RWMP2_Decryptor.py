@@ -10,7 +10,12 @@ from collections import defaultdict
 
 def reverse_replace_in_zip(zip_file_path):
     """执行解密替换的预处理功能，返回处理后的数据"""
-    # 替换
+    # 替换反斜杠（用于执行字节序列的替换操作）
+    # 如果你发现有其他文件变成了文件夹，可以自行在下方加上（别忘了后面也有代码）
+    # 用16进制编码加上，如果不懂可以复制下面一段问ai
+    # 例如
+    #    2E 74 78 74 2F（ASCII: ".txt/"）→ 替换为 2E 74 78 74 31（ASCII: ".txt1"）
+
     replacements = {
         bytes.fromhex('2E 74 78 74 2F'): bytes.fromhex('2E 74 78 74 31'),
         bytes.fromhex('2E 69 6E 69 2F'): bytes.fromhex('2E 69 6E 69 31'),
