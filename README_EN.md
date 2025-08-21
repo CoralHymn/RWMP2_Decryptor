@@ -63,11 +63,11 @@ First change your .rwmod file extension to .zip before use
 Works with most distros (contact me if issues occur) \
 Get Linux versions from [Releases](https://github.com/CoralHymn/RWMP2_Decryptor/releases)\
 These are (application/x-executable) binaries:
-- [RWMP2_Decryptor_Linux_GUI.bin](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_GUI.bin)
-- [RWMP2_Decryptor_Linux_Web.bin](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_Web.bin)(Recommended)\
+- [RWMP2_Decryptor_Linux_GUI.AppImage](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_GUI.AppImage)
+- [RWMP2_Decryptor_Linux_Web.AppImage](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_Web.AppImage)(Recommended)\
 After download, grant execute permissions:
 ```bash
-chmod +x RWMP2_Decryptor_Linux*.bin  # Add executable permission
+chmod +x RWMP2_Decryptor_Linux*.AppImage  # Add executable permission
   ```
 
   ## Linux Guide
@@ -78,7 +78,7 @@ First change your .rwmod file extension to .zip before use
   
   Run via terminal:
 ```bash
-./RWMP2_Decryptor_Linux*.bin
+./RWMP2_Decryptor_Linux*.AppImage
   ```
   - Can also double-click (but ./ recommended)
   - Click "Select ZIP File" to choose your mod
@@ -88,7 +88,7 @@ First change your .rwmod file extension to .zip before use
   
   Run via terminal:
 ```bash
-./RWMP2_Decryptor_Linux*.bin
+./RWMP2_Decryptor_Linux*.AppImage
   ```
   - Double-click works (but ./ recommended)
   - Terminal will appear briefly before browser launch
