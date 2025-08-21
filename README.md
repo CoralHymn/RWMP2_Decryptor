@@ -63,11 +63,11 @@
 大多数发行版都可以使用（如果无法使用请联系我） \
 您可以在[Releases](https://github.com/CoralHymn/RWMP2_Decryptor/releases)上获取Linux的两个最新版本 \
 他们是（application/x-executable）可执行文件
-- [RWMP2_Decryptor_Linux_GUI.bin](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_GUI.bin)
-- [RWMP2_Decryptor_Linux_Web.bin](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_Web.bin)（推荐）\
+- [RWMP2_Decryptor_Linux_GUI.AppImage](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_GUI.AppImage)
+- [RWMP2_Decryptor_Linux_Web.AppImage](https://github.com/CoralHymn/RWMP2_Decryptor/releases/download/Alpha_2.1.0/RWMP2_Decryptor_Linux_Web.AppImage)（推荐）\
 在您下载完成后，您必须要添加执行权限给文件否则无法运行
 ```bash
-chmod +x RWMP2_Decryptor_Linux*.bin  # 添加可执行权限
+chmod +x RWMP2_Decryptor_Linux*.AppImage  # 添加可执行权限
   ```
 
   ## Linux使用教程
@@ -78,7 +78,7 @@ chmod +x RWMP2_Decryptor_Linux*.bin  # 添加可执行权限
   
   目录输入
 ```bash
-./RWMP2_Decryptor_Linux*.bin
+./RWMP2_Decryptor_Linux*.AppImage
   ```
   -您也可以双击执行文件
   - 点击“选择zip文件”按钮后，会弹出文件管理器，您可以选择您需要解密的mod文件
@@ -88,7 +88,7 @@ chmod +x RWMP2_Decryptor_Linux*.bin  # 添加可执行权限
   
   目录输入
 ```bash
-./RWMP2_Decryptor_Linux*.bin
+./RWMP2_Decryptor_Linux*.AppImage
   ```
   -您也可以双击执行文件（但推荐使用./）
   - 这时会弹出终端，不用担心，等待一会会自动跳转到默认浏览器打开web页面
