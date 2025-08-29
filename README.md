@@ -8,7 +8,7 @@
 
 <div align="center">
   
-## [前往官网](https://coralhymn.com/)
+## [前往官网](https://coralhymn.com/) |## [文档网页](https://docs.cc00.top/) 
 
 </div>
 
