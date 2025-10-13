@@ -249,15 +249,18 @@ Baota v7.7+ includes Python project plugin (may need download):
 1. Baota homepage → 【Website】→ **Python Project**
 2. 【Add Project】
 
-Configure:
+Fill in the following information:
 
-| Field | Example | Notes |
+| Field | Example Value | Description |
 |------|--------|------|
-| Name | `Any name` | Custom |
-| Path | `/www/wwwroot/pywebio_app` | Code directory |
-| Python | 3.9 | Your version |
-| Entry | `RWMP2_Decryptor_Server.py` | Main file |
-| Port | `8085` | App port |
+| Project Name | `Arbitrary input` | Custom name |
+| Python Environment | Python 3.9 | Select according to your installed version |
+| Startup Method | `Command line startup` | Generally choose this option |
+| Project Path | `/www/wwwroot/pywebio_app` | Your code directory |
+| Startup Command | `python RWMP2_Decryptor_Server.py` | Main program file |
+| Environment Variables | `None` | Leave this blank |
+| Install Dependencies | `path/requirements.txt` | requirements file in the repository |
+
 
 ✅ Baota will auto:
 - Create venv
@@ -287,6 +290,11 @@ If shows:
 Running on http://0.0.0.0:8085
 ```
 Success!
+Note that in some cases the following message may appear:
+```
+(ModuleNotFoundError: No module named 'pywebio')
+```
+Don't worry, proceed to complete Step 6: Access first.
 
 ---
 
