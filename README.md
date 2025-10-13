@@ -256,10 +256,12 @@ screen -r pywebio
 | 字段 | 示例值 | 说明 |
 |------|--------|------|
 | 项目名称 | `随便填写` | 自定义名称 |
+| Python环境 | Python 3.9 | 根据你安装的版本选 |
+| 启动方式 | `命令行启动` | 一般来说选择这个选项 |
 | 项目路径 | `/www/wwwroot/pywebio_app` | 你的代码所在目录 |
-| Python版本 | Python 3.9 | 根据你安装的版本选 |
-| 启动文件 | `RWMP2_Decryptor_Server.py` | 主程序文件 |
-| 端口 | `8085` | Py文件监听的端口 |
+| 启动命令 | `python RWMP2_Decryptor_Server.py` | 主程序文件 |
+| 环境变量 | `无` | 这个不用写 |
+| 安装依赖包 | `路径/requirements.txt` | 仓库里面的requirements文件 |
 
 ✅ 提交后，宝塔会自动：
 - 创建虚拟环境
@@ -290,6 +292,11 @@ Running on http://0.0.0.0:8085
 ```
 说明成功了！
 
+注意，部分情况下会显示
+```
+（ModuleNotFoundError: No module named 'pywebio'，具体以网页为准）
+```
+不用担心，先去完成第六步
 ---
 
 ### 第六步：访问你的应用
