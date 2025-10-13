@@ -670,4 +670,7 @@ def web_main():
 
 if __name__ == '__main__':
     print("正在启动Web服务器... 访问 http://localhost:8085")
-    start_server(web_main, port=8085, debug=True, host='0.0.0.0')
+    #start_server(web_main, port=8085, debug=True, host='0.0.0.0')
+    #多线程用户运载模式，测试中，如果出现问题请删除以下两行并且取消掉上面的注释
+    from pywebio.platform.tornado import start_server as tornado_start_server
+tornado_start_server(web_main, port=8085, debug=True, host='0.0.0.0')
