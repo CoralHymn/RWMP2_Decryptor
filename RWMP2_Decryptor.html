@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>RWMP2 解密修复器（严格复刻 + 日志完整输出）</title>
+  <title>RWMP2_Decryptor</title>
   <style>
     body { font-family: Consolas, monospace; max-width: 900px; margin: 30px auto; padding: 20px; background: #f5f5f5; }
     h1 { color: #d32f2f; }
@@ -12,8 +12,12 @@
   </style>
 </head>
 <body>
-  <h1>🎮 RWMP2 解密修复器（100% 复刻原版行为）</h1>
-  <p>上传 .rwmod 或 .zip，输出与你本地运行结果一致。</p>
+  <h1>🎮 RWMP2_Decryptor——铁锈战争模组解密器（临时页）</h1>
+  <a href="https://coralhymn.com">点击这里跳转官网</a><a href="https://github.com/CoralHymn/RWMP2_Decryptor">github</a>
+  <p>请耐心等待加载 Pyodide，第一次会慢很多，一般国内的网络环境需要等待一分钟以上</p>
+  <p>只要加载完成，以后加载基本都是秒加载（只要不清理浏览器缓存）</p>
+  <p>上传 .rwmod 或 .zip文件</p>
+
   
   <input type="file" id="inputFile" accept=".zip,.rwmod" />
   <br /><br />
@@ -26,7 +30,7 @@
 
     async function initPyodide() {
       const statusDiv = document.getElementById("status");
-      statusDiv.innerText = "正在加载 Pyodide（首次约需 10–20 秒）...\n";
+      statusDiv.innerText = "正在加载 Pyodide（首次约需 20+ 秒）...\n";
       
       try {
         const { loadPyodide } = await import("https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs");
@@ -154,7 +158,7 @@ def reverse_replace_in_zip(zip_file_path):
             data = f.read()
         modified = False
         for old, new in replacements.items():
-            if old in 
+            if old in data:
                 data = data.replace(old, new)
                 modified = True
         if not modified:
