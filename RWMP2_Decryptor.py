@@ -3,6 +3,7 @@ import struct
 import zlib
 import zipfile
 import sys
+import time
 from pathlib import Path
 import hashlib
 from collections import defaultdict
@@ -505,7 +506,7 @@ def main():
     print("查看教程前往官网：https://coralhymn.com")
     file_path = input("请输入要修复的文件路径: ").strip().strip('"')
     
-    if not os.path.exists(zip_file_path):
+    if not os.path.exists(processed_file_path):
         print("文件不存在!")
         return
     
