@@ -9,7 +9,7 @@ class StartupGUI:
 
     def initUI(self):
         # 设置窗口标题和尺寸
-        self.root.title('RWMP2_Decryptor2.1.0')
+        self.root.title('RWMP2_Decryptor2.2.0')
         self.root.geometry('500x300')
         self.root.resizable(False, False)
         self.root.configure(bg='#f0f2f5')

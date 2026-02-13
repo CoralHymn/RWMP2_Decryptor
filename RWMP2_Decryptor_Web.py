@@ -14,7 +14,7 @@ from RWMP2_Decryptor import reverse_replace_in_zip, AdvancedZipRepair, process_r
 
 def main():
     print("琴海奶油版权所属，遵循MIT开源协议")
-    print("目前版本为 Alpha2.0.2")
+    print("目前版本为 Alpha2.2.0")
     print("查看教程前往官网：https://coralhymn.com")
     zip_file_path = input("请输入要修复的ZIP文件路径: ").strip().strip('"')
     

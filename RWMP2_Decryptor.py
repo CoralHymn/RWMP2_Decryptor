@@ -474,22 +474,26 @@ class AdvancedZipRepair:
             print(f"  {ext or '(无扩展名)'}: {count} 个文件")
 
 def process_rwmod_file(file_path):
-    """处理.rwmod文件，将其重命名为.zip后缀"""
+    """处理.rwmod文件，创建一个新的.zip文件"""
     if file_path.lower().endswith('.rwmod'):
         # 创建新的文件路径，将.rwmod改为.zip
         new_file_path = file_path[:-6] + '.zip'
         
         # 检查目标文件是否已存在
         if os.path.exists(new_file_path):
-            print(f"警告: 目标文件 {new_file_path} 已存在，将覆盖原文件")
+            print(f"警告: 目标文件 {new_file_path} 已存在，将创建带时间戳的文件")
+            # 添加时间戳避免覆盖
+            timestamp = int(time.time())
+            new_file_path = file_path[:-6] + f'_{timestamp}.zip'
             
         try:
-            # 重命名文件
-            os.rename(file_path, new_file_path)
-            print(f"已将 {file_path} 重命名为 {new_file_path}")
+            # 复制文件内容而不是重命名
+            with open(file_path, 'rb') as src, open(new_file_path, 'wb') as dst:
+                dst.write(src.read())
+            print(f"已创建 {new_file_path} 从 {file_path}")
             return new_file_path
         except Exception as e:
-            print(f"重命名文件失败: {e}")
+            print(f"创建文件失败: {e}")
             return None
     else:
         # 如果不是.rwmod文件，直接返回原路径
@@ -497,7 +501,7 @@ def process_rwmod_file(file_path):
 
 def main():
     print("琴海奶油版权所属，遵循MIT开源协议")
-    print("目前版本为 Alpha2.1.0")
+    print("目前版本为 Alpha2.2.0")
     print("查看教程前往官网：https://coralhymn.com")
     file_path = input("请输入要修复的文件路径: ").strip().strip('"')
     
