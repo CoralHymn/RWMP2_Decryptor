@@ -8,30 +8,81 @@
 
 <div align="center">
   
-## https://coralhymn.com/
+## https://coralhymn.com/ | [Documentation Website](https://docs.cc00.top/)
 
 </div>
 
 ## Introduction
   - RWMP2_Decryptor is an unlocking tool for the "RWMP2" MOD encryption utility used in the game "Rusted Warfare"
-  - Developed using Python, available in both GUI and WebUI versions
+  - Developed using Python, available in both GUI and WebUI versions, as well as a pure HTML static page
   - This software was created with assistance from "Qwen3-235B-A22B" and "Qwen3-Coder" AI models
 
 ----
 
 > If you find this tool useful, please give me a star on Github! \
-> Supported platforms: [ *Windows——Linux——Servers* ]
+> Supported platforms: [ *Windows——Linux——Servers* ] \
+> The web version supports any device with a browser
 
 ----
 
-## Online version available for cross-platform use (can be deployed on your server)
-  https://rw.coralhymn.com/
-  Known issue: Download may fail on "via" browser - please use Edge or Chrome
-  
+# Online Usage (Recommended for Mobile Devices)
+
+We provide a pure HTML version that requires no installation—just use it directly in your browser:
+
+[👉 Click here to use online](https://sg.coralhymn.com/py/RWMP2_Decryptor.html)
+
+**Advantages:**
+
+- Full platform compatibility (Windows, Mac, Linux, mobile browsers)
+- No installation or configuration required
+- Runs entirely in the browser using Pyodide technology
+
+> ⚠️ Known issue: Download may fail on certain mobile browsers (e.g., Via). Please use Chrome, Edge, or other mainstream browsers.
+
+# 💻 Local/Server Installation (Recommended for PC)
+
+> ⚠️ Note: Releases are outdated. The latest version has not been built yet—please build from source code.
+
+- [python-source](#Python-Source-Usage)
 - [installation-windows](#Installation-(Windows))
 - [installation-linux](#Installation-(Linux))
 - [server-deployment](#Server-Deployment)
-  
+
+# Python Source Usage
+
+> If you're on macOS, you can get the official installer from the [Python website](https://www.python.org/downloads). You may use any stable version of Python 3.10 or above, but avoid Alpha, Beta, and Release Candidate versions.
+>
+> On Linux, use your system package manager (`apt` on Debian/Ubuntu/Mint, `dnf` on Fedora, or `pacman` on Arch) to install Python (most Linux distributions come with Python pre-installed).
+>
+> On Windows, download the official installer from the [Python website](https://www.python.org/downloads). Any stable version between Python 3.9 and 3.13 is supported. Avoid Alpha, Beta, and Release Candidate versions.
+
+You will also need Git to clone the source code.
+
+Check your Python version with:
+```bash
+python --version
+```
+
+Clone the repository:
+```bash
+git clone https://github.com/CoralHymn/RWMP2_Decryptor.git
+```
+
+Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+Run the GUI version:
+```bash
+python RWMP2_Decryptor.py
+```
+
+Run the WebUI version:
+```bash
+python RWMP2_Decryptor_Web.py
+```
+
 # Installation (Windows)
 
 Get the latest Windows versions from [Releases](https://github.com/CoralHymn/RWMP2_Decryptor/releases):
@@ -340,7 +391,8 @@ No port needed!
 
 
 #### About [ Android | iOS | macOS ]
-  - More platform versions in development. Feel free to contribute branches.
+  - These platforms can use the online web version. Developing mobile apps with Python is difficult and cumbersome.
+  - More platform versions are under development. If you develop versions for other platforms, please add them to branches.
 
 ## ⚠⚠⚠️ Disclaimer
 
@@ -352,4 +404,3 @@ No port needed!
 
 使用的python库：
 [PyWebIO](https://github.com/pywebio/PyWebIO)
-[PyQt](https://www.riverbankcomputing.com/software/pyqt/)
