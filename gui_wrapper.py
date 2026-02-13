@@ -98,7 +98,7 @@ class ModernGUI:
                                   anchor='w', padx=8, pady=8)
         self.file_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
         
-        btn_select = tk.Button(file_frame, text='选择ZIP文件',
+        btn_select = tk.Button(file_frame, text='选择模组文件',
                               command=self.select_file,
                               bg='#4361ee', fg='white',
                               relief=tk.FLAT, padx=15, pady=10,
@@ -144,8 +144,8 @@ class ModernGUI:
 
     def select_file(self):
         file_path = filedialog.askopenfilename(
-            title="选择要修复的ZIP文件",
-            filetypes=[("ZIP Files", "*.zip"), ("All Files", "*.*")]
+            title="选择要修复的ZIP或RWMod文件",
+            filetypes=[("ZIP and RWMod Files", "*.zip *.rwmod"), ("ZIP Files", "*.zip"), ("RWMod Files", "*.rwmod"), ("All Files", "*.*")]
         )
         if file_path:
             self.file_label.config(text=file_path)
@@ -156,7 +156,7 @@ class ModernGUI:
     def start_processing(self):
         file_path = self.file_label.cget("text")
         if not file_path or file_path == "未选择文件":
-            self.log_text.insert(tk.END, "❌ 请先选择一个ZIP文件！\n")
+            self.log_text.insert(tk.END, "❌ 请先选择一个ZIP或RWMOD文件！\n")
             return
 
         if not os.path.exists(file_path):
