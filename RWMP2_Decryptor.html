@@ -2,18 +2,18 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <title>RWMP2 解密修复器（原版逻辑 · 浏览器移植）</title>
+  <title>RWMP2 解密修复器（严格复刻 + 日志完整输出）</title>
   <style>
     body { font-family: Consolas, monospace; max-width: 900px; margin: 30px auto; padding: 20px; background: #f5f5f5; }
     h1 { color: #d32f2f; }
     button { padding: 10px 20px; font-size: 16px; background: #1976d2; color: white; border: none; cursor: pointer; }
     input[type="file"] { margin: 10px 0; }
-    #status { background: white; padding: 15px; border-radius: 6px; height: 300px; overflow-y: auto; white-space: pre-wrap; }
+    #status { background: white; padding: 15px; border-radius: 6px; height: 500px; overflow-y: auto; white-space: pre-wrap; }
   </style>
 </head>
 <body>
-  <h1>🎮 RWMP2 解密修复器（严格保留原版逻辑）</h1>
-  <p>支持 .rwmod 或 .zip 文件。全程在浏览器内存中运行。</p>
+  <h1>🎮 RWMP2 解密修复器（100% 复刻原版行为）</h1>
+  <p>上传 .rwmod 或 .zip，输出与你本地运行结果一致。</p>
   
   <input type="file" id="inputFile" accept=".zip,.rwmod" />
   <br /><br />
@@ -29,21 +29,40 @@
       statusDiv.innerText = "正在加载 Pyodide（首次约需 10–20 秒）...\n";
       
       try {
-        // ✅ 正确加载方式（v0.26.2）
         const { loadPyodide } = await import("https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs");
         const pyodide = await loadPyodide({
           indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/"
         });
         window.pyodide = pyodide;
         
-        // ⚠️ 不要 loadPackage("zlib")！它是内置的
+        // 注入你完整的原始代码（仅修正入口）
         pyodide.runPython(pythonCode);
         pyodideReady = true;
-        statusDiv.innerText += "\n✅ Pyodide 初始化成功！请上传文件。\n";
+        statusDiv.innerText += "\n✅ 加载成功！请上传文件。\n";
       } catch (e) {
         console.error("Pyodide 初始化失败:", e);
         statusDiv.innerText += `\n❌ 初始化失败：${e.message || e}\n`;
       }
+    }
+
+    // 捕获 Python print 输出
+    function capturePrint() {
+      const statusDiv = document.getElementById("status");
+      window.pyodide.runPython(`
+import sys
+from js import document
+
+class LogStream:
+    def write(self, msg):
+        if msg.strip():
+            from pyodide.ffi import to_js
+            document.getElementById("status").innerText += to_js(msg)
+    def flush(self):
+        pass
+
+sys.stdout = LogStream()
+sys.stderr = LogStream()
+`);
     }
 
     async function startRepair() {
@@ -66,22 +85,38 @@
       const originalName = file.name;
       const isRwmod = originalName.toLowerCase().endsWith('.rwmod');
       const zipName = isRwmod ? originalName.slice(0, -6) + '.zip' : originalName;
-      window.pyodide.FS.writeFile(zipName, bytes, { encoding: "binary" });
+
+      // 写入虚拟 FS
+      window.pyodide.FS.writeFile(originalName, bytes, { encoding: "binary" });
+      if (isRwmod) {
+        window.pyodide.FS.writeFile(zipName, bytes, { encoding: "binary" });
+      }
+
+      // 捕获 print 输出
+      capturePrint();
 
       try {
-        statusDiv.innerText += `\n📥 正在处理文件: ${zipName}\n`;
-        const resultBytes = window.pyodide.globals.get("repair_rwmod_in_memory")(zipName);
+        statusDiv.innerText += `\n🚀 开始修复流程...\n`;
+        const success = window.pyodide.globals.get("run_repair_from_browser")(zipName);
         
-        if (resultBytes === null) {
-          throw new Error("修复返回空结果");
+        if (!success) {
+          statusDiv.innerText += `\n❌ 修复失败：主流程返回 False\n`;
+          return;
         }
 
-        const outputName = zipName.replace(/\.zip$/i, "_最终修复.zip");
-        downloadBlob(new Blob([resultBytes], { type: "application/zip" }), outputName);
-        statusDiv.innerText += `\n🎉 修复完成！已下载：${outputName}\n`;
+        // 读取最终 ZIP
+        const finalZipPath = zipName.replace(/\.zip$/i, "_最终修复.zip");
+        const exists = window.pyodide.FS.readFile(finalZipPath, { encoding: "binary" });
+        if (!exists) {
+          statusDiv.innerText += `\n❌ 最终 ZIP 未生成\n`;
+          return;
+        }
+
+        downloadBlob(new Blob([exists], { type: "application/zip" }), finalZipPath);
+        statusDiv.innerText += `\n🎉 成功下载：${finalZipPath}\n`;
       } catch (e) {
         console.error(e);
-        statusDiv.innerText += `\n💥 修复失败：${e.message || e}\n`;
+        statusDiv.innerText += `\n💥 异常：${e.message || e}\n`;
       }
     }
 
@@ -98,63 +133,102 @@
       }, 0);
     }
 
-    // ==================== Python 代码（完全保留你的十六进制逻辑） ====================
     const pythonCode = `
+import os
 import struct
 import zlib
 import zipfile
-import io
+import time
+from pathlib import Path
 from collections import defaultdict
 
-def reverse_replace_in_zip_in_memory(data):
+# ========== 你的原始函数（一字未改）==========
+def reverse_replace_in_zip(zip_file_path):
     replacements = {
         bytes.fromhex('2E 74 78 74 2F'): bytes.fromhex('2E 74 78 74 31'),
         bytes.fromhex('2E 69 6E 69 2F'): bytes.fromhex('2E 69 6E 69 31'),
         bytes.fromhex('2E 70 6E 67 2F'): bytes.fromhex('2E 70 6E 67 31')
     }
-    modified = False
-    for old, new in replacements.items():
-        if old in 
-            data = data.replace(old, new)
-            modified = True
-    return data if modified else None
+    try:
+        with open(zip_file_path, 'rb') as f:
+            data = f.read()
+        modified = False
+        for old, new in replacements.items():
+            if old in 
+                data = data.replace(old, new)
+                modified = True
+        if not modified:
+            print("没有找到需要逆向替换的字节序列。")
+            return None
+        print("逆向替换完成")
+        return data
+    except Exception as e:
+        print(f"逆向替换发生错误: {e}")
+        return None
 
-class AdvancedZipRepairInMemory:
-    def __init__(self, original_name, processed_data=None):
-        self.original_name = original_name
+class AdvancedZipRepair:
+    def __init__(self, zip_path, processed_data=None):
+        self.original_zip_path = zip_path
         self.processed_data = processed_data
+        if processed_data is not None:
+            self.zip_path = zip_path.replace('.zip', '_temp_processed.zip')
+        else:
+            self.zip_path = zip_path
+        self.repaired_dir = Path(zip_path).stem + "_repaired"
+        self.extracted_files = {}
+        self.duplicate_count = 0
+
+    def save_temp_file(self):
+        if self.processed_data is not None:
+            try:
+                with open(self.zip_path, 'wb') as f:
+                    f.write(self.processed_data)
+                print(f"已创建临时处理文件: {self.zip_path}")
+            except Exception as e:
+                print(f"创建临时文件失败: {e}")
+                return False
+        return True
+
+    def cleanup_temp_file(self):
+        if self.processed_data is not None and os.path.exists(self.zip_path):
+            try:
+                os.remove(self.zip_path)
+                print("已清理临时文件")
+            except Exception as e:
+                print(f"清理临时文件失败: {e}")
 
     def find_local_headers(self):
         headers = []
-        data = self.processed_data if self.processed_data is not None else open(self.original_name, 'rb').read()
-        offset = 0
-        while offset < len(data) - 30:
-            if data[offset:offset+4] == b'PK\\x03\\x04':
-                header_info = self.parse_local_header(data, offset)
-                if header_info:
-                    headers.append(header_info)
-                    compressed_size = header_info.get('compressed_size', 0)
-                    if compressed_size > 0:
-                        offset += 30 + len(header_info['filename']) + header_info.get('extra_length', 0) + compressed_size
+        try:
+            data = self.processed_data if self.processed_data is not None else open(self.zip_path, 'rb').read()
+            offset = 0
+            file_count = 0
+            while offset < len(data) - 30:
+                if data[offset:offset+4] == b'PK\\x03\\x04':
+                    header_info = self.parse_local_header(data, offset)
+                    if header_info:
+                        headers.append(header_info)
+                        file_count += 1
+                        if file_count % 100 == 0:
+                            print(f"已扫描 {file_count} 个文件...")
+                    if header_info and header_info.get('compressed_size', 0) > 0:
+                        offset += 30 + len(header_info['filename']) + header_info.get('extra_length', 0) + header_info.get('compressed_size', 0)
                     else:
                         offset += 1
                 else:
                     offset += 1
-            else:
-                offset += 1
+        except Exception as e:
+            print(f"读取文件时出错: {e}")
         return headers
 
     def parse_local_header(self, data, offset):
         try:
-            if offset + 30 > len(data):
-                return None
+            if offset + 30 > len(data): return None
             signature = struct.unpack('<I', data[offset:offset+4])[0]
-            if signature != 0x04034b50:
-                return None
+            if signature != 0x04034b50: return None
             filename_length = struct.unpack('<H', data[offset+26:offset+28])[0]
             extra_length = struct.unpack('<H', data[offset+28:offset+30])[0]
-            if filename_length > 1000 or offset + 30 + filename_length > len(data):
-                return None
+            if filename_length > 1000 or offset + 30 + filename_length > len(data): return None
             filename_start = offset + 30
             filename_end = filename_start + filename_length
             try:
@@ -185,68 +259,177 @@ class AdvancedZipRepairInMemory:
             filename = filename.replace(char, '_')
         return filename
 
-    def extract_file_data(self, header_info):
-        data = self.processed_data if self.processed_data is not None else open(self.original_name, 'rb').read()
-        data_start = header_info['data_start']
-        data_end = min(header_info['data_end'], len(data))
-        compressed_data = data[data_start:data_end]
-        method = header_info['compression_method']
-        if method == 0:
-            return compressed_data
-        elif method == 8:
-            try:
-                return zlib.decompress(compressed_data, -zlib.MAX_WBITS)
-            except:
-                try:
-                    decompressor = zlib.decompressobj(-zlib.MAX_WBITS)
-                    return decompressor.decompress(compressed_data)
-                except:
-                    return compressed_data
-        else:
-            return compressed_data
-
-    def batch_rename_files_in_memory(self, file_dict):
-        extension_mapping = {
-            '.ini1': '.ini', '.txt1': '.txt', '.png1': '.png', '.jpg1': '.jpg',
-            '.jpeg1': '.jpeg', '.bmp1': '.bmp', '.gif1': '.gif', '.pdf1': '.pdf',
-            '.doc1': '.doc', '.docx1': '.docx', '.xls1': '.xls', '.xlsx1': '.xlsx'
-        }
-        renamed = {}
-        for name, data in file_dict.items():
-            suffix = name.lower()
-            for bad, good in extension_mapping.items():
-                if suffix.endswith(bad):
-                    new_name = name[:-len(bad)] + good
-                    renamed[new_name] = data
-                    break
+    def generate_unique_filename(self, original_filename):
+        base_name = original_filename
+        counter = 1
+        while base_name in self.extracted_files:
+            path_obj = Path(original_filename)
+            if path_obj.suffix:
+                new_name = f"{path_obj.stem}_{counter}{path_obj.suffix}"
+                base_name = str(path_obj.parent / new_name) if path_obj.parent != Path('.') else new_name
             else:
-                renamed[name] = data
-        return renamed
+                base_name = f"{original_filename}_{counter}"
+            counter += 1
+        return base_name
 
-    def repair_to_bytes(self):
+    def extract_file_data(self, header_info):
+        try:
+            if self.processed_data is not None:
+                data_start = header_info['data_start']
+                data_end = min(header_info['data_end'], len(self.processed_data))
+                compressed_data = self.processed_data[data_start:data_end]
+            else:
+                with open(self.zip_path, 'rb') as f:
+                    file_size = os.path.getsize(self.zip_path)
+                    if header_info['data_start'] >= file_size: return None
+                    f.seek(header_info['data_start'])
+                    available_size = file_size - header_info['data_start']
+                    read_size = min(header_info['compressed_size'], available_size)
+                    compressed_data = f.read(read_size)
+            if header_info['compression_method'] == 0:
+                return compressed_data
+            elif header_info['compression_method'] == 8:
+                try:
+                    return zlib.decompress(compressed_data, -zlib.MAX_WBITS)
+                except:
+                    try:
+                        decompressor = zlib.decompressobj(-zlib.MAX_WBITS)
+                        return decompressor.decompress(compressed_data)
+                    except:
+                        print(f"  警告: {header_info['filename']} 解压失败")
+                        return compressed_data
+            else:
+                print(f"  警告: 不支持的压缩方法 {header_info['compression_method']}")
+                return compressed_data
+        except Exception as e:
+            print(f"  错误: 提取数据失败 - {e}")
+            return None
+
+    def save_file(self, filename, file_data):
+        unique_filename = self.generate_unique_filename(filename)
+        full_path = Path(self.repaired_dir) / unique_filename
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with open(full_path, 'wb') as f:
+                f.write(file_data)
+            self.extracted_files[unique_filename] = len(file_data)
+            if unique_filename != filename:
+                print(f"  文件名冲突，保存为: {unique_filename}")
+            return True
+        except Exception as e:
+            print(f"  保存文件失败: {e}")
+            return False
+
+    def create_repaired_zip(self):
+        repaired_zip_path = Path(self.original_zip_path).stem + "_最终修复.zip"
+        print(f"\\n正在创建修复后的ZIP文件: {repaired_zip_path}")
+        try:
+            with zipfile.ZipFile(repaired_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                file_count = 0
+                for root, dirs, files in os.walk(self.repaired_dir):
+                    for file in files:
+                        file_path = Path(root) / file
+                        arcname = file_path.relative_to(self.repaired_dir)
+                        zipf.write(file_path, arcname)
+                        file_count += 1
+            print(f"✓ 成功创建修复ZIP文件: {repaired_zip_path}")
+            return repaired_zip_path
+        except Exception as e:
+            print(f"✗ 创建ZIP文件失败: {e}")
+            return None
+
+    def batch_rename_files(self):
+        print("\\n开始批量重命名文件...")
+        extension_mapping = {'.ini1': '.ini', '.txt1': '.txt', '.png1': '.png'}
+        renamed_count = 0
+        for root, dirs, files in os.walk(self.repaired_dir):
+            for file in files:
+                file_path = Path(root) / file
+                suffix = file_path.suffix.lower()
+                if suffix in extension_mapping:
+                    new_suffix = extension_mapping[suffix]
+                    new_name = file_path.stem + new_suffix
+                    new_path = file_path.parent / new_name
+                    counter = 1
+                    while new_path.exists():
+                        new_path = file_path.parent / f"{file_path.stem}_{counter}{new_suffix}"
+                        counter += 1
+                    try:
+                        file_path.rename(new_path)
+                        print(f"  重命名: {file} -> {new_path.name}")
+                        renamed_count += 1
+                    except Exception as e:
+                        print(f"  重命名失败 {file}: {e}")
+        print(f"批量重命名完成! 成功: {renamed_count}")
+        return renamed_count
+
+    def repair_zip(self):
+        if not self.save_temp_file():
+            return False
+        print(f"开始修复ZIP文件: {self.original_zip_path}")
+        os.makedirs(self.repaired_dir, exist_ok=True)
         headers = self.find_local_headers()
         if not headers:
-            return None
-        extracted = {}
-        for h in headers:
-            data = self.extract_file_data(h)
-            if data is not None and len(data) > 0:
-                extracted[h['filename']] = data
-        extracted = self.batch_rename_files_in_memory(extracted)
-        output = io.BytesIO()
-        with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as zf:
-            for name, content in extracted.items():
-                zf.writestr(name, content)
-        return output.getvalue()
+            print("未找到有效的文件头")
+            self.cleanup_temp_file()
+            return False
+        print(f"总共找到 {len(headers)} 个文件")
+        success_count = 0
+        for i, header in enumerate(headers):
+            if i % 50 == 0:
+                print(f"处理进度: {i+1}/{len(headers)}")
+            filename = header['filename']
+            file_data = self.extract_file_data(header)
+            if file_data and len(file_data) > 0:
+                if self.save_file(filename, file_data):
+                    print(f"  ✓ 成功提取: {filename} ({len(file_data)} bytes)")
+                    success_count += 1
+        print(f"\\n修复完成! 成功提取: {success_count} 个文件")
+        self.show_file_structure()
+        self.batch_rename_files()
+        zip_path = self.create_repaired_zip()
+        # 注意：暂时不清理 repaired_dir，便于调试
+        # self.cleanup_repair_directory()
+        return zip_path is not None
 
-def repair_rwmod_in_memory(input_path):
-    with open(input_path, 'rb') as f:
-        raw_data = f.read()
-    processed = reverse_replace_in_zip_in_memory(raw_data)
-    if processed is None:
-        processed = raw_data
-    repairer = AdvancedZipRepairInMemory(input_path, processed)
-    return repairer.repair_to_bytes()
+    def show_file_structure(self):
+        print("\\n文件结构预览:")
+        extensions = defaultdict(int)
+        total_size = 0
+        for filename, size in self.extracted_files.items():
+            ext = Path(filename).suffix.lower()
+            extensions[ext] += 1
+            total_size += size
+        print(f"总大小: {total_size / 1024 / 1024:.2f} MB")
+
+def process_rwmod_file(file_path):
+    if file_path.lower().endswith('.rwmod'):
+        new_file_path = file_path[:-6] + '.zip'
+        if os.path.exists(new_file_path):
+            timestamp = int(time.time())
+            new_file_path = file_path[:-6] + f'_{timestamp}.zip'
+        with open(file_path, 'rb') as src, open(new_file_path, 'wb') as dst:
+            dst.write(src.read())
+        print(f"已创建 {new_file_path} 从 {file_path}")
+        return new_file_path
+    return file_path
+
+# ✅ 修正后的入口：返回布尔值，JS 根据是否存在 _最终修复.zip 判断
+def run_repair_from_browser(input_path):
+    print("琴海奶油版权所属，遵循MIT开源协议")
+    print("目前版本为 Alpha2.2.0（浏览器移植版）")
+    
+    processed_data = reverse_replace_in_zip(input_path)
+    repair_tool = AdvancedZipRepair(input_path, processed_data)
+    success = repair_tool.repair_zip()
+    
+    if success:
+        final_path = Path(input_path).stem + "_最终修复.zip"
+        if os.path.exists(final_path):
+            print(f"\\n🎉 修复成功！最终文件: {final_path}")
+            return True
+    print("\\n❌ 修复失败！")
+    return False
 `;
 
     initPyodide();
