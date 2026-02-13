@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Edit ZIP in Browser</title>
+</head>
+<body>
+  <h2>ZIP 编辑器（纯前端）</h2>
+  <input type="file" id="zipFile" accept=".zip">
+  <button onclick="processZip()">编辑并下载</button>
+  <p id="status"></p>
+
+  <script type="text/javascript">
+    async function main() {
+      document.getElementById("status").innerText = "加载 Pyodide...";
+      window.pyodide = await loadPyodide();
+      document.getElementById("status").innerText = "准备就绪";
+    }
+
+    async function processZip() {
+      const fileInput = document.getElementById("zipFile");
+      if (!fileInput.files[0]) {
+        alert("请先选择一个 ZIP 文件");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const arrayBuffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+
+      // 将文件写入 Pyodide 虚拟文件系统
+      window.pyodide.FS.writeFile("input.zip", bytes, { encoding: "binary" });
+
+      // 执行 Python 逻辑：解压、修改、重打包
+      try {
+        window.pyodide.runPython(`
+import zipfile
+import io
+
+# 读取上传的 ZIP
+with zipfile.ZipFile('input.zip', 'r') as zf:
+    names = zf.namelist()
+    print("原文件:", names)
+
+# 创建新 ZIP（添加一个说明文件）
+output_buffer = io.BytesIO()
+with zipfile.ZipFile(output_buffer, 'w') as new_zf:
+    # 复制原文件
+    with zipfile.ZipFile('input.zip', 'r') as old_zf:
+        for name in old_zf.namelist():
+            data = old_zf.read(name)
+            new_zf.writestr(name, data)
+    # 添加新文件
+    new_zf.writestr("EDITED_BY_PYTHON.txt", "此 ZIP 已被浏览器中的 Python 修改！")
+
+# 保存到虚拟文件系统
+with open('output.zip', 'wb') as f:
+    f.write(output_buffer.getvalue())
+`);
+        // 从虚拟文件系统读取结果
+        const outputBytes = window.pyodide.FS.readFile("output.zip", { encoding: "binary" });
+        downloadBlob(new Blob([outputBytes], { type: "application/zip" }), "edited_output.zip");
+        document.getElementById("status").innerText = "✅ 编辑完成，已下载！";
+      } catch (e) {
+        console.error(e);
+        document.getElementById("status").innerText = "❌ 出错：" + e;
+      }
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 0);
+    }
+
+    // 启动
+    main();
+  </script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+</body>
+</html>
