@@ -473,28 +473,56 @@ class AdvancedZipRepair:
         for ext, count in sorted(extensions.items()):
             print(f"  {ext or '(无扩展名)'}: {count} 个文件")
 
-def main():
+def process_rwmod_file(file_path):
+    """处理.rwmod文件，将其重命名为.zip后缀"""
+    if file_path.lower().endswith('.rwmod'):
+        # 创建新的文件路径，将.rwmod改为.zip
+        new_file_path = file_path[:-6] + '.zip'
+        
+        # 检查目标文件是否已存在
+        if os.path.exists(new_file_path):
+            print(f"警告: 目标文件 {new_file_path} 已存在，将覆盖原文件")
+            
+        try:
+            # 重命名文件
+            os.rename(file_path, new_file_path)
+            print(f"已将 {file_path} 重命名为 {new_file_path}")
+            return new_file_path
+        except Exception as e:
+            print(f"重命名文件失败: {e}")
+            return None
+    else:
+        # 如果不是.rwmod文件，直接返回原路径
+        return file_path
 
+def main():
     print("琴海奶油版权所属，遵循MIT开源协议")
     print("目前版本为 Alpha2.1.0")
     print("查看教程前往官网：https://coralhymn.com")
-    zip_file_path = input("请输入要修复的ZIP文件路径: ").strip().strip('"')
+    file_path = input("请输入要修复的文件路径: ").strip().strip('"')
     
     if not os.path.exists(zip_file_path):
         print("文件不存在!")
         return
     
-    if not zip_file_path.lower().endswith('.zip'):
-        print("请提供ZIP文件!")
+    # 检查并处理.rwmod文件
+    processed_file_path = process_rwmod_file(file_path)
+    if processed_file_path is None:
+        print("文件处理失败!")
+        return
+    
+    # 检查是否为ZIP文件（包括刚重命名的文件）
+    if not processed_file_path.lower().endswith('.zip'):
+        print("请提供ZIP文件或.rwmod文件!")
         return
     
     # 第一步：执行逆向替换预处理
     print("第一步：执行逆向替换预处理...")
-    processed_data = reverse_replace_in_zip(zip_file_path)
+    processed_data = reverse_replace_in_zip(processed_file_path)
     
     # 第二步：使用处理后的数据进行修复
     print("\n第二步：开始修复ZIP文件...")
-    repair_tool = AdvancedZipRepair(zip_file_path, processed_data)
+    repair_tool = AdvancedZipRepair(processed_file_path, processed_data)
     
     # 开始修复
     repair_tool.repair_zip()
