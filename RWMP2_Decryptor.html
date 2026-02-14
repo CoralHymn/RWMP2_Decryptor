@@ -13,9 +13,10 @@
 </head>
 <body>
   <h1>🎮 RWMP2_Decryptor——铁锈战争模组解密器（临时页）</h1>
-  <a href="https://coralhymn.com">点击这里跳转官网</a><a href="https://github.com/CoralHymn/RWMP2_Decryptor">github</a>
-  <p>请耐心等待加载 Pyodide，第一次会慢很多，一般国内的网络环境需要等待一分钟以上</p>
+  <a href="https://coralhymn.com">点击这里跳转官网</a><p>——</p><a href="https://github.com/CoralHymn/RWMP2_Decryptor">github</a>
+  <p>请耐心等待加载 Pyodide，第一次会慢很多，一般国内的网络环境等待一分钟以上都是有可能的（jsdelivr被墙了，若您要部署请换成国内cdn）</p>
   <p>只要加载完成，以后加载基本都是秒加载（只要不清理浏览器缓存）</p>
+  <p>点击开始按钮后卡顿是正常的，因为html性能肯定不如原生py，点击后请耐心等待</p>
   <p>上传 .rwmod 或 .zip文件</p>
 
   
@@ -30,7 +31,7 @@
 
     async function initPyodide() {
       const statusDiv = document.getElementById("status");
-      statusDiv.innerText = "正在加载 Pyodide（首次约需 20+ 秒）...\n";
+      statusDiv.innerText = "正在加载 Pyodide（首次约需 10 秒左右）...\n";
       
       try {
         const { loadPyodide } = await import("https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs");
@@ -39,7 +40,7 @@
         });
         window.pyodide = pyodide;
         
-        // 注入你完整的原始代码（仅修正入口）
+        // 写入文件
         pyodide.runPython(pythonCode);
         pyodideReady = true;
         statusDiv.innerText += "\n✅ 加载成功！请上传文件。\n";
@@ -108,7 +109,7 @@ sys.stderr = LogStream()
           return;
         }
 
-        // 读取最终 ZIP
+        // 读取输出文件
         const finalZipPath = zipName.replace(/\.zip$/i, "_最终修复.zip");
         const exists = window.pyodide.FS.readFile(finalZipPath, { encoding: "binary" });
         if (!exists) {
@@ -146,7 +147,7 @@ import time
 from pathlib import Path
 from collections import defaultdict
 
-# ========== 你的原始函数（一字未改）==========
+# ========== python原始函数==========
 def reverse_replace_in_zip(zip_file_path):
     replacements = {
         bytes.fromhex('2E 74 78 74 2F'): bytes.fromhex('2E 74 78 74 31'),
