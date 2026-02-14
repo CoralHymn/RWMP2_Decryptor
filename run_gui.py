@@ -13,6 +13,12 @@ class StartupGUI:
         self.root.geometry('500x300')
         self.root.resizable(False, False)
         self.root.configure(bg='#f0f2f5')
+        
+        # 添加窗口图标设置
+        try:
+            self.root.iconbitmap('icon.ico')
+        except:
+            pass  # 如果图标文件不存在则忽略
 
         # 标题标签
         title = tk.Label(

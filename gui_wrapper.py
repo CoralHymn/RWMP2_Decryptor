@@ -62,6 +62,11 @@ class ModernGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.final_zip_path = ""
+        # 添加窗口图标设置
+        try:
+            self.root.iconbitmap('icon.ico')
+        except:
+            pass  # 如果图标文件不存在则忽略
         self.initUI()
 
     def initUI(self):
