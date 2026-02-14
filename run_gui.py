@@ -72,7 +72,7 @@ class StartupGUI:
             font=('Arial', 12, 'underline')
         )
         tutorial_link.pack(side=tk.LEFT, padx=5)
-        tutorial_link.bind("<Button-1>", lambda e: webbrowser.open("https://cc00.top"))
+        tutorial_link.bind("<Button-1>", lambda e: webbrowser.open("https://docs.cc00.top/2025/08/29/RWMP2-Decryptor/"))
 
         # 使用条款链接
         terms_link = tk.Label(
@@ -84,7 +84,7 @@ class StartupGUI:
             font=('Arial', 12, 'underline')
         )
         terms_link.pack(side=tk.LEFT, padx=5)
-        terms_link.bind("<Button-1>", lambda e: webbrowser.open("https://cc00.top"))
+        terms_link.bind("<Button-1>", lambda e: webbrowser.open("https://docs.cc00.top/2025/08/29/RWMP2-Decryptor/#%E2%9A%A0%EF%B8%8F-%E4%BD%BF%E7%94%A8%E5%A3%B0%E6%98%8E"))
 
         # 按钮框架
         button_frame = tk.Frame(self.root, bg='#f0f2f5')
