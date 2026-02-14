@@ -7,6 +7,17 @@ import threading
 
 from RWMP2_Decryptor import reverse_replace_in_zip, AdvancedZipRepair
 
+# 添加获取资源文件路径的函数
+def resource_path(relative_path):
+    """ 获取资源文件的绝对路径 """
+    try:
+        # PyInstaller 创建临时文件夹，并将路径存储在 _MEIPASS 中
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
+
 class WorkerThread(threading.Thread):
     """一个在后台运行原修复脚本的线程"""
     def __init__(self, zip_path, log_callback, finished_callback):
@@ -62,9 +73,10 @@ class ModernGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.final_zip_path = ""
-        # 添加窗口图标设置
+        # 添加窗口图标设置 - 使用资源路径函数
+        icon_path = resource_path('icon.ico')
         try:
-            self.root.iconbitmap('icon.ico')
+            self.root.iconbitmap(icon_path)
         except:
             pass  # 如果图标文件不存在则忽略
         self.initUI()

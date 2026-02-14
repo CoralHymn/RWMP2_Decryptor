@@ -1,6 +1,19 @@
 import tkinter as tk
 import subprocess
 import webbrowser
+import sys
+import os
+
+# 添加获取资源文件路径的函数
+def resource_path(relative_path):
+    """ 获取资源文件的绝对路径 """
+    try:
+        # PyInstaller 创建临时文件夹，并将路径存储在 _MEIPASS 中
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
 
 class StartupGUI:
     def __init__(self):
@@ -14,9 +27,10 @@ class StartupGUI:
         self.root.resizable(False, False)
         self.root.configure(bg='#f0f2f5')
         
-        # 添加窗口图标设置
+        # 添加窗口图标设置 - 使用资源路径函数
+        icon_path = resource_path('icon.ico')
         try:
-            self.root.iconbitmap('icon.ico')
+            self.root.iconbitmap(icon_path)
         except:
             pass  # 如果图标文件不存在则忽略
 
@@ -115,16 +129,36 @@ class StartupGUI:
     def run_gui_version(self):
         """运行GUI版本"""
         try:
-            subprocess.Popen(['python', 'gui_wrapper.py'])
-            self.root.destroy()  # 成功运行后关闭当前窗口
+            # 直接导入并运行GUI，而不是启动新进程
+            from gui_wrapper import ModernGUI
+            self.root.withdraw()  # 隐藏启动窗口
+            try:
+                window = ModernGUI()
+                window.show()
+            finally:
+                self.root.deiconify()  # 重新显示启动窗口
         except Exception as e:
             tk.messagebox.showerror("错误", f"无法启动GUI版本: {e}")
 
     def run_web_version(self):
         """运行Web版本"""
         try:
-            subprocess.Popen(['python', 'RWMP2_Decryptor_Web.py'])
-            self.root.destroy()  # 成功运行后关闭当前窗口
+            # 直接导入并运行Web版本，而不是启动新进程
+            from RWMP2_Decryptor_Web import web_main
+            import threading
+            
+            # 在新线程中启动web服务器，避免阻塞GUI
+            def start_web_server():
+                try:
+                    print("正在启动Web服务器... 访问 http://localhost:8085")
+                    from pywebio import start_server
+                    start_server(web_main, port=8085, debug=True, host='localhost', auto_open_webbrowser=True)
+                except Exception as e:
+                    print(f"启动Web服务器失败: {e}")
+            
+            web_thread = threading.Thread(target=start_web_server, daemon=True)
+            web_thread.start()
+            
         except Exception as e:
             tk.messagebox.showerror("错误", f"无法启动Web版本: {e}")
 
