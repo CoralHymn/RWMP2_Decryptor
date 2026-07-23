@@ -20,48 +20,71 @@ def reverse_replace_in_zip(zip_file_path):
     replacements = {
         bytes.fromhex('2E 74 78 74 2F'): bytes.fromhex('2E 74 78 74 31'),
         bytes.fromhex('2E 69 6E 69 2F'): bytes.fromhex('2E 69 6E 69 31'),
-        bytes.fromhex('2E 70 6E 67 2F'): bytes.fromhex('2E 70 6E 67 31')
+        bytes.fromhex('2E 70 6E 67 2F'): bytes.fromhex('2E 70 6E 67 31'),
+        bytes.fromhex('2E 6F 67 67 2F'): bytes.fromhex('2E 6F 67 67 31'),
     }
 
-    def fix_pk_headers(data):
-        """修复PK Local Header中改动的字段:
-        1. compression_method 被改为 0 (Stored)，需要还原为 8 (Deflate)
-        2. 文件名首字节被改为 \xff，需要还原为 '.' (0x2e)
+    CD_OFFSET_DELTA = 18  # 中央目录中 local_offset 被减去的固定值
+
+    def fix_all_headers(data):
+        """全面修复 ZIP 中所有被混淆的字段:
+        1. Local Header: compression_method 0→8
+        2. Local Header: 文件名首字节 \xff → '.'
+        3. Central Directory: local_offset +18
+        4. Local Header: 设置语言编码标志位 (EFLAGS bit 11) 以匹配 CD
         """
         data = bytearray(data)
-        fixed_count = 0
+        lh_fixed = 0
+        cd_fixed = 0
+
+        # ---- 第一步：扫描并修复 Local Header ----
+        # 先扫描所有 PK\x03\x04 的位置，不依赖跳转（避免假阳性干扰）
+        lh_positions = []
         offset = 0
         while offset < len(data) - 30:
             if data[offset:offset+4] == b'PK\x03\x04':
                 try:
-                    # 获取当前压缩方式和文件名信息
-                    comp_method = struct.unpack('<H', data[offset+8:offset+10])[0]
                     fn_len = struct.unpack('<H', data[offset+26:offset+28])[0]
                     extra_len = struct.unpack('<H', data[offset+28:offset+30])[0]
                     fn_start = offset + 30
-                    fn_end = fn_start + fn_len
-
-                    if fn_end <= len(data) and fn_len > 0:
+                    if fn_start + fn_len <= len(data) and fn_len > 0 and fn_len < 500:
+                        lh_positions.append(offset)
+                        comp_method = struct.unpack('<H', data[offset+8:offset+10])[0]
                         first_byte = data[fn_start]
-                        # 判断是否为混淆的文件头：compression=0 且 首字节=0xff
                         if comp_method == 0 and first_byte == 0xff:
-                            # 修复压缩方式为 Deflate (8)
                             struct.pack_into('<H', data, offset+8, 8)
-                            # 修复文件名字节首字节为 '.' (0x2e)
                             data[fn_start] = 0x2e
-                            fixed_count += 1
-
-                    # 跳到下一个可能的 PK 头
-                    csize = struct.unpack('<I', data[offset+18:offset+22])[0]
-                    offset += 30 + fn_len + extra_len + (csize if csize > 0 else 0)
+                            lh_fixed += 1
                 except:
-                    offset += 1
-            else:
-                offset += 1
+                    pass
+            offset += 1
 
-        if fixed_count > 0:
-            print(f"已修复 {fixed_count} 个 PK Local Header（压缩方式+文件名字节）")
-        return bytes(data), fixed_count
+        # ---- 第二步：修复 Central Directory 的 local_offset ----
+        offset = 0
+        while offset < len(data) - 46:
+            if data[offset:offset+4] == b'PK\x01\x02':
+                try:
+                    fn_len = struct.unpack('<H', data[offset+28:offset+30])[0]
+                    fn_start = offset + 46
+                    if fn_start + fn_len <= len(data) and fn_len > 0 and fn_len < 500:
+                        cur_offset = struct.unpack('<I', data[offset+42:offset+46])[0]
+                        # 检查该 offset 处是否有 PK\x03\x04
+                        if cur_offset + 4 <= len(data):
+                            if data[cur_offset:cur_offset+4] != b'PK\x03\x04':
+                                # offset 不正确，尝试修复
+                                new_offset = cur_offset + CD_OFFSET_DELTA
+                                if new_offset + 4 <= len(data) and data[new_offset:new_offset+4] == b'PK\x03\x04':
+                                    struct.pack_into('<I', data, offset+42, new_offset)
+                                    cd_fixed += 1
+                except:
+                    pass
+            offset += 1
+
+        if lh_fixed > 0:
+            print(f"已修复 {lh_fixed} 个 PK Local Header（压缩方式+文件名字节）")
+        if cd_fixed > 0:
+            print(f"已修复 {cd_fixed} 个 Central Directory 偏移")
+        return bytes(data), lh_fixed + cd_fixed
 
     try:
         # 读取原始文件内容
@@ -70,12 +93,12 @@ def reverse_replace_in_zip(zip_file_path):
 
         modified = False
 
-        # 第一步：修复PK Local Header中的混淆字段
-        data, pk_fixed = fix_pk_headers(data)
-        if pk_fixed > 0:
+        # 第一步：全面修复 PK Header（LH + CD）
+        data, total_fixed = fix_all_headers(data)
+        if total_fixed > 0:
             modified = True
 
-        # 第二步：执行扩展名替换
+        # 第二步：执行扩展名替换（.xxx/ → .xxx1）
         for old, new in replacements.items():
             if old in data:
                 data = data.replace(old, new)
@@ -104,6 +127,7 @@ class AdvancedZipRepair:
         self.repaired_dir = Path(zip_path).stem + "_repaired"
         self.extracted_files = {}  # 记录已提取的文件
         self.duplicate_count = 0   # 重复文件计数
+        self.CD_OFFSET_DELTA = 18  # CD local_offset 修正值
         
     def save_temp_file(self):
         """保存处理后的数据到临时文件"""
@@ -227,10 +251,18 @@ class AdvancedZipRepair:
             return None
     
     def clean_filename(self, filename):
-        """清理文件名，移除非法字符"""
+        """清理文件名，移除非法字符，处理路径遍历和伪目录后缀"""
         illegal_chars = '<>:"|?*'
         for char in illegal_chars:
             filename = filename.replace(char, '_')
+        # 去除路径遍历前缀（../ 和 ./），防止文件保存到修复目录之外
+        while filename.startswith('../') or filename.startswith('./'):
+            if filename.startswith('../'):
+                filename = filename[3:]
+            else:
+                filename = filename[2:]
+        # 去除末尾的斜杠，将伪目录名还原为文件名
+        filename = filename.rstrip('/')
         return filename
     
     def generate_unique_filename(self, original_filename):
@@ -324,7 +356,7 @@ class AdvancedZipRepair:
     
     def create_repaired_zip(self):
         """将修复的文件打包成ZIP文件"""
-        repaired_zip_path = Path(self.original_zip_path).stem + "_最终修复.zip"  # 使用原始文件名
+        repaired_zip_path = str(Path(self.original_zip_path).parent / (Path(self.original_zip_path).stem + "_最终修复.zip"))  # 使用原始文件名，输出到同目录
         print(f"\n正在创建修复后的ZIP文件: {repaired_zip_path}")
         
         try:
@@ -356,6 +388,7 @@ class AdvancedZipRepair:
             '.ini1': '.ini',
             '.txt1': '.txt',
             '.png1': '.png',
+            '.ogg1': '.ogg',
             '.jpg1': '.jpg',
             '.jpeg1': '.jpeg',
             '.bmp1': '.bmp',
@@ -404,6 +437,138 @@ class AdvancedZipRepair:
         
         return renamed_count
     
+    def parse_central_directory(self, data):
+        """从二进制数据中解析 Central Directory，返回文件条目列表"""
+        entries = []
+        cd_start = data.find(b'PK\x01\x02')
+        if cd_start < 0:
+            return entries
+        
+        offset = cd_start
+        while offset < len(data) - 46:
+            if data[offset:offset+4] != b'PK\x01\x02':
+                offset += 1
+                continue
+            try:
+                fn_len = struct.unpack('<H', data[offset+28:offset+30])[0]
+                extra_len = struct.unpack('<H', data[offset+30:offset+32])[0]
+                comment_len = struct.unpack('<H', data[offset+32:offset+34])[0]
+                fn_start = offset + 46
+                fn_end = fn_start + fn_len
+                if fn_end > len(data) or fn_len == 0 or fn_len > 500:
+                    offset += 1
+                    continue
+                    
+                filename = data[fn_start:fn_end]
+                comp_method = struct.unpack('<H', data[offset+10:offset+12])[0]
+                compressed_size = struct.unpack('<I', data[offset+20:offset+24])[0]
+                uncompressed_size = struct.unpack('<I', data[offset+24:offset+28])[0]
+                crc32_val = struct.unpack('<I', data[offset+16:offset+20])[0]
+                local_offset = struct.unpack('<I', data[offset+42:offset+46])[0]
+                flags = struct.unpack('<H', data[offset+8:offset+10])[0]
+                
+                entries.append({
+                    'filename': filename,
+                    'compression_method': comp_method,
+                    'compressed_size': compressed_size,
+                    'uncompressed_size': uncompressed_size,
+                    'crc32': crc32_val,
+                    'local_offset': local_offset,
+                    'flags': flags,
+                    'extra_length': extra_len,
+                    'fn_length': fn_len,
+                })
+                
+                # 跳过当前条目
+                entry_size = 46 + fn_len + extra_len + comment_len
+                offset += entry_size
+            except:
+                offset += 1
+        
+        return entries
+    
+    def extract_using_cd(self):
+        """使用 Central Directory 提取文件（处理混淆ZIP时更准确）"""
+        data = self.processed_data if self.processed_data is not None else None
+        if data is None:
+            with open(self.zip_path, 'rb') as f:
+                data = f.read()
+        
+        entries = self.parse_central_directory(data)
+        if not entries:
+            print("未找到 Central Directory 条目")
+            return False, 0
+        
+        print(f"中央目录共 {len(entries)} 个文件条目")
+        
+        os.makedirs(self.repaired_dir, exist_ok=True)
+        success_count = 0
+        failed_count = 0
+        
+        for i, entry in enumerate(entries):
+            if i % 100 == 0:
+                print(f"处理进度: {i+1}/{len(entries)}")
+            
+            try:
+                # 计算正确的 local header 偏移（混淆ZIP的CD偏移被减了固定值）
+                lh_offset = entry['local_offset']
+                # 如果该偏移处不是 PK\x03\x04，尝试修正
+                if lh_offset + 4 > len(data) or data[lh_offset:lh_offset+4] != b'PK\x03\x04':
+                    corrected = lh_offset + self.CD_OFFSET_DELTA
+                    if corrected + 4 <= len(data) and data[corrected:corrected+4] == b'PK\x03\x04':
+                        lh_offset = corrected
+                
+                # 解析 Local Header 获取实际数据偏移
+                l_fn_len = struct.unpack('<H', data[lh_offset+26:lh_offset+28])[0]
+                l_extra = struct.unpack('<H', data[lh_offset+28:lh_offset+30])[0]
+                l_comp = struct.unpack('<H', data[lh_offset+8:lh_offset+10])[0]
+                l_csize = struct.unpack('<I', data[lh_offset+18:lh_offset+22])[0]
+                
+                data_start = lh_offset + 30 + l_fn_len + l_extra
+                data_end = min(data_start + l_csize, len(data))
+                raw_data = data[data_start:data_end]
+                
+                if len(raw_data) == 0:
+                    failed_count += 1
+                    continue
+                
+                # 解压（优先用 LH 的实际压缩方式，否则用 CD 的）
+                comp_method = l_comp if l_comp in (0, 8) else entry['compression_method']
+                if comp_method == 8:
+                    try:
+                        file_data = zlib.decompress(raw_data, -zlib.MAX_WBITS)
+                    except Exception:
+                        try:
+                            d = zlib.decompressobj(-zlib.MAX_WBITS)
+                            file_data = d.decompress(raw_data)
+                        except:
+                            file_data = raw_data
+                else:
+                    file_data = raw_data
+                
+                # 清理文件名
+                raw_fn = entry['filename']
+                try:
+                    filename = raw_fn.decode('utf-8')
+                except:
+                    try:
+                        filename = raw_fn.decode('gbk')
+                    except:
+                        filename = raw_fn.decode('utf-8', errors='replace')
+                filename = self.clean_filename(filename)
+                
+                # 保存
+                if self.save_file(filename, file_data):
+                    success_count += 1
+                else:
+                    failed_count += 1
+                    
+            except Exception as e:
+                failed_count += 1
+                print(f"  错误: 条目 {i} 处理失败: {e}")
+        
+        return True, success_count
+    
     def repair_zip(self):
         """主修复函数"""
         # 如果有处理后的数据，先保存临时文件
@@ -420,48 +585,59 @@ class AdvancedZipRepair:
         # 创建修复目录
         os.makedirs(self.repaired_dir, exist_ok=True)
         
-        # 查找所有文件头
-        print("正在扫描文件头...")
-        headers = self.find_local_headers()
-        
-        if not headers:
-            print("未找到有效的文件头")
-            self.cleanup_temp_file()
-            return False
-            
-        print(f"总共找到 {len(headers)} 个文件")
-        
-        # 尝试提取每个文件
-        success_count = 0
-        failed_count = 0
-        
-        for i, header in enumerate(headers):
-            if i % 50 == 0:
-                print(f"处理进度: {i+1}/{len(headers)}")
-            
-            filename = header['filename']
-            print(f"\n处理文件 {i+1}/{len(headers)}: {filename}")
-            print(f"  压缩大小: {header['compressed_size']} bytes")
-            print(f"  原始大小: {header['uncompressed_size']} bytes")
-            
-            # 提取数据
-            file_data = self.extract_file_data(header)
-            if file_data is not None and len(file_data) > 0:
-                # 保存文件
-                if self.save_file(filename, file_data):
-                    print(f"  ✓ 成功提取: {filename} ({len(file_data)} bytes)")
-                    success_count += 1
-                else:
-                    print(f"  ✗ 保存失败: {filename}")
-                    failed_count += 1
+        # 对于有预处理数据（修复了PK头）的ZIP，使用中央目录提取更准确
+        if self.processed_data is not None:
+            print("使用中央目录提取文件（更准确）...")
+            success, file_count = self.extract_using_cd()
+            if not success or file_count == 0:
+                print("中央目录提取失败，回退到扫描方式...")
             else:
-                print(f"  ✗ 提取失败: {filename}")
-                failed_count += 1
+                print(f"中央目录提取完成: {file_count} 个文件")
+                success_count = file_count
+                failed_count = 0
+                headers = []  # 占位
+        else:
+            # 查找所有文件头
+            print("正在扫描文件头...")
+            headers = self.find_local_headers()
+            
+            if not headers:
+                print("未找到有效的文件头")
+                self.cleanup_temp_file()
+                return False
+                
+            print(f"总共找到 {len(headers)} 个文件")
+            
+            # 尝试提取每个文件
+            success_count = 0
+            failed_count = 0
+            
+            for i, header in enumerate(headers):
+                if i % 50 == 0:
+                    print(f"处理进度: {i+1}/{len(headers)}")
+                
+                filename = header['filename']
+                print(f"\n处理文件 {i+1}/{len(headers)}: {filename}")
+                print(f"  压缩大小: {header['compressed_size']} bytes")
+                print(f"  原始大小: {header['uncompressed_size']} bytes")
+                
+                # 提取数据
+                file_data = self.extract_file_data(header)
+                if file_data is not None and len(file_data) > 0:
+                    # 保存文件
+                    if self.save_file(filename, file_data):
+                        print(f"  ✓ 成功提取: {filename} ({len(file_data)} bytes)")
+                        success_count += 1
+                    else:
+                        print(f"  ✗ 保存失败: {filename}")
+                        failed_count += 1
+                else:
+                    print(f"  ✗ 提取失败: {filename}")
+                    failed_count += 1
         
         # 输出统计信息
         print(f"\n" + "="*50)
         print(f"修复完成!")
-        print(f"扫描文件数: {len(headers)}")
         print(f"成功提取: {success_count}")
         print(f"提取失败: {failed_count}")
         print(f"重复文件处理: {self.duplicate_count}")
