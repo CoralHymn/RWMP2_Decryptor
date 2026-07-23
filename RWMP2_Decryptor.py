@@ -22,26 +22,72 @@ def reverse_replace_in_zip(zip_file_path):
         bytes.fromhex('2E 69 6E 69 2F'): bytes.fromhex('2E 69 6E 69 31'),
         bytes.fromhex('2E 70 6E 67 2F'): bytes.fromhex('2E 70 6E 67 31')
     }
-    
+
+    def fix_pk_headers(data):
+        """修复PK Local Header中改动的字段:
+        1. compression_method 被改为 0 (Stored)，需要还原为 8 (Deflate)
+        2. 文件名首字节被改为 \xff，需要还原为 '.' (0x2e)
+        """
+        data = bytearray(data)
+        fixed_count = 0
+        offset = 0
+        while offset < len(data) - 30:
+            if data[offset:offset+4] == b'PK\x03\x04':
+                try:
+                    # 获取当前压缩方式和文件名信息
+                    comp_method = struct.unpack('<H', data[offset+8:offset+10])[0]
+                    fn_len = struct.unpack('<H', data[offset+26:offset+28])[0]
+                    extra_len = struct.unpack('<H', data[offset+28:offset+30])[0]
+                    fn_start = offset + 30
+                    fn_end = fn_start + fn_len
+
+                    if fn_end <= len(data) and fn_len > 0:
+                        first_byte = data[fn_start]
+                        # 判断是否为混淆的文件头：compression=0 且 首字节=0xff
+                        if comp_method == 0 and first_byte == 0xff:
+                            # 修复压缩方式为 Deflate (8)
+                            struct.pack_into('<H', data, offset+8, 8)
+                            # 修复文件名字节首字节为 '.' (0x2e)
+                            data[fn_start] = 0x2e
+                            fixed_count += 1
+
+                    # 跳到下一个可能的 PK 头
+                    csize = struct.unpack('<I', data[offset+18:offset+22])[0]
+                    offset += 30 + fn_len + extra_len + (csize if csize > 0 else 0)
+                except:
+                    offset += 1
+            else:
+                offset += 1
+
+        if fixed_count > 0:
+            print(f"已修复 {fixed_count} 个 PK Local Header（压缩方式+文件名字节）")
+        return bytes(data), fixed_count
+
     try:
         # 读取原始文件内容
         with open(zip_file_path, 'rb') as f:
             data = f.read()
-        
-        # 执行替换
+
         modified = False
+
+        # 第一步：修复PK Local Header中的混淆字段
+        data, pk_fixed = fix_pk_headers(data)
+        if pk_fixed > 0:
+            modified = True
+
+        # 第二步：执行扩展名替换
         for old, new in replacements.items():
             if old in data:
                 data = data.replace(old, new)
                 modified = True
-        
+
         if not modified:
             print("没有找到需要逆向替换的字节序列。")
             return None  # 返回None表示没有修改
-        
+
         print("逆向替换完成")
         return data  # 返回处理后的数据
-    
+
     except Exception as e:
         print(f"逆向替换发生错误: {e}")
         return None  # 出错时返回None

@@ -1,3 +1,4 @@
+import sys
 import tkinter as tk
 import subprocess
 import webbrowser
@@ -5,7 +6,10 @@ import webbrowser
 class StartupGUI:
     def __init__(self):
         self.root = tk.Tk()
+        self.child_processes = []  # 存储子进程引用
         self.initUI()
+        # 绑定窗口关闭事件
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def initUI(self):
         # 设置窗口标题和尺寸
@@ -113,20 +117,55 @@ class StartupGUI:
         self.web_button.config(state=state)
 
     def run_gui_version(self):
-        """运行GUI版本"""
+        """运行 GUI 版本"""
         try:
-            subprocess.Popen(['python', 'gui_wrapper.py'])
-            self.root.destroy()  # 成功运行后关闭当前窗口
+            # 根据平台设置创建新进程
+            if sys.platform == 'win32':
+                proc = subprocess.Popen([sys.executable, 'gui_wrapper.py'], 
+                                       creationflags=subprocess.CREATE_NEW_CONSOLE)
+            else:
+                proc = subprocess.Popen([sys.executable, 'gui_wrapper.py'])
+            self.child_processes.append(proc)
+            self.root.withdraw()  # 隐藏主窗口而不是销毁
         except Exception as e:
-            tk.messagebox.showerror("错误", f"无法启动GUI版本: {e}")
+            tk.messagebox.showerror("错误", f"无法启动 GUI 版本：{e}")
 
     def run_web_version(self):
-        """运行Web版本"""
+        """运行 Web 版本"""
         try:
-            subprocess.Popen(['python', 'RWMP2_Decryptor_Web.py'])
-            self.root.destroy()  # 成功运行后关闭当前窗口
+            # 根据平台设置创建新进程
+            if sys.platform == 'win32':
+                proc = subprocess.Popen([sys.executable, 'RWMP2_Decryptor_Web.py'],
+                                       creationflags=subprocess.CREATE_NEW_CONSOLE)
+            else:
+                proc = subprocess.Popen([sys.executable, 'RWMP2_Decryptor_Web.py'])
+            self.child_processes.append(proc)
+            self.root.withdraw()  # 隐藏主窗口而不是销毁
         except Exception as e:
-            tk.messagebox.showerror("错误", f"无法启动Web版本: {e}")
+            tk.messagebox.showerror("错误", f"无法启动 Web 版本：{e}")
+
+    def on_closing(self):
+        """窗口关闭时的清理工作"""
+        # 终止所有子进程
+        for proc in self.child_processes:
+            try:
+                if proc.poll() is None:  # 如果进程还在运行
+                    proc.terminate()
+                    # Windows 平台需要强制结束
+                    if sys.platform == 'win32':
+                        import time
+                        time.sleep(0.5)
+                        if proc.poll() is None:
+                            proc.kill()
+            except Exception as e:
+                pass
+        
+        # 等待一小段时间让进程清理
+        import time
+        time.sleep(0.3)
+        
+        # 销毁窗口
+        self.root.destroy()
 
     def show(self):
         self.root.mainloop()
